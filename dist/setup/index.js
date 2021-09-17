@@ -1890,7 +1890,6 @@ var core = __nccwpck_require__(186);
 var exec = __nccwpck_require__(514);
 // EXTERNAL MODULE: external "os"
 var external_os_ = __nccwpck_require__(87);
-var external_os_default = /*#__PURE__*/__nccwpck_require__.n(external_os_);
 ;// CONCATENATED MODULE: external "stream"
 const external_stream_namespaceObject = require("stream");
 // EXTERNAL MODULE: ./node_modules/@actions/io/lib/io.js
@@ -2003,6 +2002,8 @@ const checkIfEnvironmentVariableIsOmitted = (key) => {
 // EXTERNAL MODULE: external "path"
 var external_path_ = __nccwpck_require__(622);
 var external_path_default = /*#__PURE__*/__nccwpck_require__.n(external_path_);
+// EXTERNAL MODULE: external "child_process"
+var external_child_process_ = __nccwpck_require__(129);
 ;// CONCATENATED MODULE: ./src/installer.ts
 var installer_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -2017,9 +2018,6 @@ var installer_awaiter = (undefined && undefined.__awaiter) || function (thisArg,
 
 
 
-
-
-const START_SCRIPT_EXECUTION_MARKER = `Starting script execution via docker image https://hub.docker.com/r/amazon/aws-cli:`;
 const CONTAINER_WORKSPACE = '/github/workspace';
 const CONTAINER_TEMP_DIRECTORY = '/_temp';
 const installAWSCli = (version) => installer_awaiter(void 0, void 0, void 0, function* () {
@@ -2027,7 +2025,10 @@ const installAWSCli = (version) => installer_awaiter(void 0, void 0, void 0, fun
     yield setAlias('aws', aliasCommand);
 });
 const setAlias = (alias, command) => installer_awaiter(void 0, void 0, void 0, function* () {
-    yield executeAliasCommand(`${alias}=${command}`);
+    const { stdout } = yield createAlias(`${alias}=${command}`);
+    for (const line of stdout.split('\n')) {
+        console.log(line);
+    }
 });
 const createAliasCommand = (version) => installer_awaiter(void 0, void 0, void 0, function* () {
     const dockerTool = yield io.which('docker', true);
@@ -2049,41 +2050,17 @@ const createAliasCommand = (version) => installer_awaiter(void 0, void 0, void 0
     command += ` amazon/aws-cli:${version}`;
     return command;
 });
-const executeAliasCommand = (aliasCommand, continueOnError = false) => installer_awaiter(void 0, void 0, void 0, function* () {
-    const aliasTool = 'alias';
-    let errorStream = '';
-    let shouldOutputErrorStream = false;
-    // noinspection JSUnusedGlobalSymbols
-    const execOptions = {
-        outStream: new NullOutstreamStringWritable({ decodeStrings: false }),
-        listeners: {
-            stdout: (data) => console.log(data.toString()),
-            errline: (data) => {
-                if (!shouldOutputErrorStream) {
-                    errorStream += data + (external_os_default()).EOL;
-                }
-                else {
-                    console.log(data);
-                }
-                if (data.trim() === START_SCRIPT_EXECUTION_MARKER) {
-                    shouldOutputErrorStream = true;
-                    errorStream = ''; // Flush the container logs. After this, script error logs will be tracked.
-                }
+const createAlias = (aliasCommand) => installer_awaiter(void 0, void 0, void 0, function* () {
+    return new Promise(function (resolve, reject) {
+        (0,external_child_process_.exec)(`alias ${aliasCommand}`, (error, stdout, stderr) => {
+            if (error) {
+                reject(error);
             }
-        }
-    };
-    let exitCode;
-    try {
-        exitCode = yield exec.exec(`"${aliasTool}" ${aliasCommand}`, [], execOptions);
-    }
-    catch (error) {
-        core.setFailed(error);
-    }
-    finally {
-        if (exitCode !== 0 && !continueOnError) {
-            core.setFailed(errorStream || 'unable to set aws alias');
-        }
-    }
+            else {
+                resolve({ stdout, stderr });
+            }
+        });
+    });
 });
 
 ;// CONCATENATED MODULE: ./src/main.ts

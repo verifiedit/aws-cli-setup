@@ -1,15 +1,8 @@
-import {
-  checkIfEnvironmentVariableIsOmitted,
-  NullOutstreamStringWritable,
-  TEMP_DIRECTORY
-} from './utils'
+import {checkIfEnvironmentVariableIsOmitted, TEMP_DIRECTORY} from './utils'
 import * as io from '@actions/io'
-import os from 'os'
-import * as exec from '@actions/exec'
-import * as core from '@actions/core'
 import path from 'path'
+import {exec} from 'child_process'
 
-const START_SCRIPT_EXECUTION_MARKER = `Starting script execution via docker image https://hub.docker.com/r/amazon/aws-cli:`
 const CONTAINER_WORKSPACE = '/github/workspace'
 const CONTAINER_TEMP_DIRECTORY = '/_temp'
 
@@ -20,7 +13,10 @@ export const installAWSCli = async (version: string): Promise<void> => {
 }
 
 const setAlias = async (alias: string, command: string): Promise<void> => {
-  await executeAliasCommand(`${alias}=${command}`)
+  const {stdout} = await createAlias(`${alias}=${command}`)
+  for (const line of stdout.split('\n')) {
+    console.log(line)
+  }
 }
 
 const createAliasCommand = async (version: string): Promise<string> => {
@@ -53,43 +49,16 @@ const createAliasCommand = async (version: string): Promise<string> => {
   return command
 }
 
-const executeAliasCommand = async (
-  aliasCommand: string,
-  continueOnError = false
-): Promise<void> => {
-  const aliasTool = 'alias'
-  let errorStream = ''
-  let shouldOutputErrorStream = false
-  // noinspection JSUnusedGlobalSymbols
-  const execOptions: any = {
-    outStream: new NullOutstreamStringWritable({decodeStrings: false}),
-    listeners: {
-      stdout: (data: any) => console.log(data.toString()), //to log the script output while the script is running.
-      errline: (data: string) => {
-        if (!shouldOutputErrorStream) {
-          errorStream += data + os.EOL
-        } else {
-          console.log(data)
-        }
-        if (data.trim() === START_SCRIPT_EXECUTION_MARKER) {
-          shouldOutputErrorStream = true
-          errorStream = '' // Flush the container logs. After this, script error logs will be tracked.
-        }
+const createAlias = async (
+  aliasCommand: string
+): Promise<{stdout: string; stderr: string}> => {
+  return new Promise(function (resolve, reject) {
+    exec(`alias ${aliasCommand}`, (error, stdout, stderr) => {
+      if (error) {
+        reject(error)
+      } else {
+        resolve({stdout, stderr})
       }
-    }
-  }
-  let exitCode
-  try {
-    exitCode = await exec.exec(
-      `"${aliasTool}" ${aliasCommand}`,
-      [],
-      execOptions
-    )
-  } catch (error) {
-    core.setFailed(error)
-  } finally {
-    if (exitCode !== 0 && !continueOnError) {
-      core.setFailed(errorStream || 'unable to set aws alias')
-    }
-  }
+    })
+  })
 }
