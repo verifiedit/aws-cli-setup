@@ -1,13 +1,13 @@
 import * as core from '@actions/core'
-import {NullOutstreamStringWritable} from './utils'
-import os from 'os'
 import * as exec from '@actions/exec'
+import * as os from 'os'
 import {installAWSCli} from './installer'
+import {NullOutstreamStringWritable, dockerPullImage} from './utils'
 
 export const run = async (): Promise<void> => {
   try {
     // version is optional. If not supplied, use `latest` tag.
-    let version = core.getInput('awsCliVersion')
+    let version = core.getInput('awscliversion')
     if (!version) {
       version = 'latest'
     }
@@ -20,6 +20,7 @@ export const run = async (): Promise<void> => {
     }
 
     await installAWSCli(version)
+    await dockerPullImage('amazon/aws-cli', version)
   } catch (error) {
     core.setFailed(error.message)
   }

@@ -1886,12 +1886,28 @@ __nccwpck_require__.r(__webpack_exports__);
 
 // EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
 var core = __nccwpck_require__(186);
-;// CONCATENATED MODULE: external "stream"
-const external_stream_namespaceObject = require("stream");
+// EXTERNAL MODULE: ./node_modules/@actions/exec/lib/exec.js
+var exec = __nccwpck_require__(514);
 // EXTERNAL MODULE: external "os"
 var external_os_ = __nccwpck_require__(87);
 var external_os_default = /*#__PURE__*/__nccwpck_require__.n(external_os_);
+;// CONCATENATED MODULE: external "stream"
+const external_stream_namespaceObject = require("stream");
+// EXTERNAL MODULE: ./node_modules/@actions/io/lib/io.js
+var io = __nccwpck_require__(436);
 ;// CONCATENATED MODULE: ./src/utils.ts
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+
+
+
 
 
 const TEMP_DIRECTORY = process.env.RUNNER_TEMP || external_os_.tmpdir();
@@ -1902,6 +1918,41 @@ class NullOutstreamStringWritable extends external_stream_namespaceObject.Writab
         }
     }
 }
+const dockerPullImage = (image, version) => __awaiter(void 0, void 0, void 0, function* () {
+    const dockerTool = yield io.which('docker', true);
+    let errorStream = '';
+    let shouldOutputErrorStream = false;
+    // noinspection JSUnusedGlobalSymbols
+    const execOptions = {
+        outStream: new NullOutstreamStringWritable({ decodeStrings: false }),
+        listeners: {
+            stdout: (data) => console.log(data.toString()),
+            errline: (data) => {
+                if (!shouldOutputErrorStream) {
+                    errorStream += data + external_os_.EOL;
+                }
+                else {
+                    console.log(data);
+                }
+                shouldOutputErrorStream = true;
+                errorStream = ''; // Flush the container logs. After this, script error logs will be tracked.
+            }
+        }
+    };
+    let exitCode;
+    try {
+        exitCode = yield exec.exec(`"${dockerTool}" pull ${image}:${version}`, [], execOptions);
+    }
+    catch (error) {
+        core.setFailed(error);
+    }
+    finally {
+        if (exitCode !== 0) {
+            core.setFailed(errorStream ||
+                `unable to execute ${dockerTool} pull ${image}:${version}`);
+        }
+    }
+});
 const checkIfEnvironmentVariableIsOmitted = (key) => {
     const omitEnvironmentVariables = [
         'LANG',
@@ -1949,15 +2000,11 @@ const checkIfEnvironmentVariableIsOmitted = (key) => {
     return omitEnvironmentVariablesWithPrefix.some((prefix) => key.toUpperCase().startsWith(prefix));
 };
 
-// EXTERNAL MODULE: ./node_modules/@actions/exec/lib/exec.js
-var exec = __nccwpck_require__(514);
-// EXTERNAL MODULE: ./node_modules/@actions/io/lib/io.js
-var io = __nccwpck_require__(436);
 // EXTERNAL MODULE: external "path"
 var external_path_ = __nccwpck_require__(622);
 var external_path_default = /*#__PURE__*/__nccwpck_require__.n(external_path_);
 ;// CONCATENATED MODULE: ./src/installer.ts
-var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+var installer_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -1975,14 +2022,14 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
 const START_SCRIPT_EXECUTION_MARKER = `Starting script execution via docker image https://hub.docker.com/r/amazon/aws-cli:`;
 const CONTAINER_WORKSPACE = '/github/workspace';
 const CONTAINER_TEMP_DIRECTORY = '/_temp';
-const installAWSCli = (version) => __awaiter(void 0, void 0, void 0, function* () {
+const installAWSCli = (version) => installer_awaiter(void 0, void 0, void 0, function* () {
     const aliasCommand = yield createAliasCommand(version);
     yield setAlias('aws', aliasCommand);
 });
-const setAlias = (alias, command) => __awaiter(void 0, void 0, void 0, function* () {
+const setAlias = (alias, command) => installer_awaiter(void 0, void 0, void 0, function* () {
     yield executeAliasCommand(`${alias}=${command}`);
 });
-const createAliasCommand = (version) => __awaiter(void 0, void 0, void 0, function* () {
+const createAliasCommand = (version) => installer_awaiter(void 0, void 0, void 0, function* () {
     const dockerTool = yield io.which('docker', true);
     let environmentVariables = '';
     for (const key in process.env) {
@@ -2002,7 +2049,7 @@ const createAliasCommand = (version) => __awaiter(void 0, void 0, void 0, functi
     command += ` amazon/aws-cli:${version}`;
     return command;
 });
-const executeAliasCommand = (aliasCommand, continueOnError = false) => __awaiter(void 0, void 0, void 0, function* () {
+const executeAliasCommand = (aliasCommand, continueOnError = false) => installer_awaiter(void 0, void 0, void 0, function* () {
     const aliasTool = yield io.which('alias', true);
     let errorStream = '';
     let shouldOutputErrorStream = false;
@@ -2057,7 +2104,7 @@ var main_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arg
 const run = () => main_awaiter(void 0, void 0, void 0, function* () {
     try {
         // version is optional. If not supplied, use `latest` tag.
-        let version = core.getInput('awsCliVersion');
+        let version = core.getInput('awscliversion');
         if (!version) {
             version = 'latest';
         }
@@ -2066,6 +2113,7 @@ const run = () => main_awaiter(void 0, void 0, void 0, function* () {
             core.setFailed('Please enter a valid aws cli version. \nSee available versions: https://hub.docker.com/r/amazon/aws-cli/tags.');
         }
         yield installAWSCli(version);
+        yield dockerPullImage('amazon/aws-cli', version);
     }
     catch (error) {
         core.setFailed(error.message);
@@ -2077,7 +2125,7 @@ const checkIfValidVersion = (version) => main_awaiter(void 0, void 0, void 0, fu
     const execOptions = {
         outStream: new NullOutstreamStringWritable({ decodeStrings: false }),
         listeners: {
-            stdout: (data) => (outStream += `${data.toString()}${(external_os_default()).EOL}`)
+            stdout: (data) => (outStream += `${data.toString()}${external_os_.EOL}`)
         }
     };
     try {
