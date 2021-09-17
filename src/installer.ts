@@ -13,7 +13,7 @@ export const installAWSCli = async (version: string): Promise<void> => {
 }
 
 const setAlias = async (alias: string, command: string): Promise<void> => {
-  const {stdout} = await createAlias(`${alias}=${command}`)
+  const {stdout} = await createAlias(`${alias}='${command}'`)
   for (const line of stdout.split('\n')) {
     console.log(line)
   }
@@ -25,7 +25,7 @@ const createAliasCommand = async (version: string): Promise<string> => {
   let environmentVariables = ''
   for (const key in process.env) {
     if (!checkIfEnvironmentVariableIsOmitted(key) && process.env[key]) {
-      environmentVariables += ` -e "${key}=${process.env[key]} `
+      environmentVariables += ` -e "${key}=${process.env[key]}" `
     }
   }
   const github_env_file_relative_path = path.relative(

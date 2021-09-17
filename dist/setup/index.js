@@ -2025,7 +2025,7 @@ const installAWSCli = (version) => installer_awaiter(void 0, void 0, void 0, fun
     yield setAlias('aws', aliasCommand);
 });
 const setAlias = (alias, command) => installer_awaiter(void 0, void 0, void 0, function* () {
-    const { stdout } = yield createAlias(`${alias}=${command}`);
+    const { stdout } = yield createAlias(`${alias}='${command}'`);
     for (const line of stdout.split('\n')) {
         console.log(line);
     }
@@ -2035,7 +2035,7 @@ const createAliasCommand = (version) => installer_awaiter(void 0, void 0, void 0
     let environmentVariables = '';
     for (const key in process.env) {
         if (!checkIfEnvironmentVariableIsOmitted(key) && process.env[key]) {
-            environmentVariables += ` -e "${key}=${process.env[key]} `;
+            environmentVariables += ` -e "${key}=${process.env[key]}" `;
         }
     }
     const github_env_file_relative_path = external_path_default().relative(TEMP_DIRECTORY, process.env.GITHUB_ENV || '');
