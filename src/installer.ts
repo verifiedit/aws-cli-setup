@@ -57,7 +57,7 @@ const executeAliasCommand = async (
   aliasCommand: string,
   continueOnError = false
 ): Promise<void> => {
-  const aliasTool: string = await io.which('alias', true)
+  const aliasTool = 'alias'
   let errorStream = ''
   let shouldOutputErrorStream = false
   // noinspection JSUnusedGlobalSymbols

@@ -2050,7 +2050,7 @@ const createAliasCommand = (version) => installer_awaiter(void 0, void 0, void 0
     return command;
 });
 const executeAliasCommand = (aliasCommand, continueOnError = false) => installer_awaiter(void 0, void 0, void 0, function* () {
-    const aliasTool = yield io.which('alias', true);
+    const aliasTool = 'alias';
     let errorStream = '';
     let shouldOutputErrorStream = false;
     // noinspection JSUnusedGlobalSymbols
