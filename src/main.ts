@@ -1,19 +1,52 @@
 import * as core from '@actions/core'
-import {wait} from './wait'
+import {NullOutstreamStringWritable} from './utils'
+import os from 'os'
+import * as exec from '@actions/exec'
+import {installAWSCli} from './installer'
 
-async function run(): Promise<void> {
+export const run = async (): Promise<void> => {
   try {
-    const ms: string = core.getInput('milliseconds')
-    core.debug(`Waiting ${ms} milliseconds ...`) // debug is only output if you set the secret `ACTIONS_RUNNER_DEBUG` to true
+    // version is optional. If not supplied, use `latest` tag.
+    let version = core.getInput('awsCliVersion')
+    if (!version) {
+      version = 'latest'
+    }
 
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
+    // check that version exists
+    if (!(await checkIfValidVersion(version))) {
+      core.setFailed(
+        'Please enter a valid aws cli version. \nSee available versions: https://hub.docker.com/r/amazon/aws-cli/tags.'
+      )
+    }
 
-    core.setOutput('time', new Date().toTimeString())
+    await installAWSCli(version)
   } catch (error) {
     core.setFailed(error.message)
   }
 }
 
-run()
+const checkIfValidVersion = async (version: string): Promise<boolean> => {
+  let outStream = ''
+  // noinspection JSUnusedGlobalSymbols
+  const execOptions: any = {
+    outStream: new NullOutstreamStringWritable({decodeStrings: false}),
+    listeners: {
+      stdout: (data: any) => (outStream += `${data.toString()}${os.EOL}`)
+    }
+  }
+
+  try {
+    await exec.exec(
+      `curl -sS https://registry.hub.docker.com/v2/repositories/amazon/aws-cli/tags/${version}`,
+      [],
+      execOptions
+    )
+    return !!(outStream && JSON.parse(outStream).name)
+  } catch (error) {
+    core.warning(
+      `Unable to fetch aws cli versions. Output: ${outStream}, Error: ${error}`
+    )
+  }
+
+  return false
+}
