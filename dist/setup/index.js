@@ -2026,6 +2026,7 @@ const installAWSCli = (version) => installer_awaiter(void 0, void 0, void 0, fun
 });
 const setAlias = (alias, command) => installer_awaiter(void 0, void 0, void 0, function* () {
     const { stdout } = yield createAlias(`${alias}='${command}'`);
+    console.log(`alias ${alias}='${command}`);
     for (const line of stdout.split('\n')) {
         console.log(line);
     }

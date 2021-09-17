@@ -14,6 +14,7 @@ export const installAWSCli = async (version: string): Promise<void> => {
 
 const setAlias = async (alias: string, command: string): Promise<void> => {
   const {stdout} = await createAlias(`${alias}='${command}'`)
+  console.log(`alias ${alias}='${command}`)
   for (const line of stdout.split('\n')) {
     console.log(line)
   }
