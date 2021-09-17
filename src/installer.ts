@@ -14,7 +14,7 @@ export const installAWSCli = async (version: string): Promise<void> => {
 
 const setAlias = async (alias: string, command: string): Promise<void> => {
   const {stdout} = await createAlias(`${alias}='${command}'`)
-  console.log(`alias ${alias}='${command}`)
+  console.log(`alias ${alias}='${command}'`)
   for (const line of stdout.split('\n')) {
     console.log(line)
   }
@@ -40,9 +40,11 @@ const createAliasCommand = async (version: string): Promise<string> => {
 
   let command = `${dockerTool} run --rm -ti --workdir ${CONTAINER_WORKSPACE} `
   command += ` -v ${process.env.GITHUB_WORKSPACE}:${CONTAINER_WORKSPACE} `
-  command += ` -v ${process.env.HOME}/.aws:/root/.aws `
   command += ` -v ${TEMP_DIRECTORY}:${CONTAINER_TEMP_DIRECTORY} `
   command += ` ${environmentVariables} `
+  command += ` -e AWS_ACCESS_KEY_ID=${process.env.AWS_ACCESS_KEY_ID} `
+  command += ` -e AWS_SECRET_ACCESS_KEY=${process.env.AWS_SECRET_ACCESS_KEY} `
+  command += ` -e AWS_SESSION_TOKEN=${process.env.AWS_SESSION_TOKEN} `
   command += ` -e GITHUB_WORKSPACE=${CONTAINER_WORKSPACE} `
   command += ` -e GITHUB_ENV=${CONTAINER_GITHUB_ENV} `
   command += ` amazon/aws-cli:${version}`

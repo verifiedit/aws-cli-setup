@@ -2026,7 +2026,7 @@ const installAWSCli = (version) => installer_awaiter(void 0, void 0, void 0, fun
 });
 const setAlias = (alias, command) => installer_awaiter(void 0, void 0, void 0, function* () {
     const { stdout } = yield createAlias(`${alias}='${command}'`);
-    console.log(`alias ${alias}='${command}`);
+    console.log(`alias ${alias}='${command}'`);
     for (const line of stdout.split('\n')) {
         console.log(line);
     }
@@ -2043,9 +2043,11 @@ const createAliasCommand = (version) => installer_awaiter(void 0, void 0, void 0
     const CONTAINER_GITHUB_ENV = external_path_default().resolve(CONTAINER_TEMP_DIRECTORY, github_env_file_relative_path);
     let command = `${dockerTool} run --rm -ti --workdir ${CONTAINER_WORKSPACE} `;
     command += ` -v ${process.env.GITHUB_WORKSPACE}:${CONTAINER_WORKSPACE} `;
-    command += ` -v ${process.env.HOME}/.aws:/root/.aws `;
     command += ` -v ${TEMP_DIRECTORY}:${CONTAINER_TEMP_DIRECTORY} `;
     command += ` ${environmentVariables} `;
+    command += ` -e AWS_ACCESS_KEY_ID=${process.env.AWS_ACCESS_KEY_ID} `;
+    command += ` -e AWS_SECRET_ACCESS_KEY=${process.env.AWS_SECRET_ACCESS_KEY} `;
+    command += ` -e AWS_SESSION_TOKEN=${process.env.AWS_SESSION_TOKEN} `;
     command += ` -e GITHUB_WORKSPACE=${CONTAINER_WORKSPACE} `;
     command += ` -e GITHUB_ENV=${CONTAINER_GITHUB_ENV} `;
     command += ` amazon/aws-cli:${version}`;
