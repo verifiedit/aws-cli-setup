@@ -42,11 +42,9 @@ const createAliasCommand = async (version: string): Promise<string> => {
   command += ` -v ${process.env.GITHUB_WORKSPACE}:${CONTAINER_WORKSPACE} `
   command += ` -v ${TEMP_DIRECTORY}:${CONTAINER_TEMP_DIRECTORY} `
   command += ` ${environmentVariables} `
-  command += ` -e AWS_ACCESS_KEY_ID `
-  command += ` -e AWS_SECRET_ACCESS_KEY `
-  command += ` -e AWS_SESSION_TOKEN `
   command += ` -e GITHUB_WORKSPACE=${CONTAINER_WORKSPACE} `
   command += ` -e GITHUB_ENV=${CONTAINER_GITHUB_ENV} `
+  command += ` --env-file docker.env `
   command += ` amazon/aws-cli:${version}`
 
   return command
