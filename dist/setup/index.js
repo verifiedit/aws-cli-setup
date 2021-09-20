@@ -2047,7 +2047,6 @@ const createAliasCommand = (version) => installer_awaiter(void 0, void 0, void 0
     command += ` ${environmentVariables} `;
     command += ` -e GITHUB_WORKSPACE=${CONTAINER_WORKSPACE} `;
     command += ` -e GITHUB_ENV=${CONTAINER_GITHUB_ENV} `;
-    command += ` --env-file docker.env `;
     command += ` amazon/aws-cli:${version}`;
     return command;
 });
